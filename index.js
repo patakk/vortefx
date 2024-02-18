@@ -96,6 +96,8 @@ let EDGE_OFFSET;
 let THICKNESS;
 let VERSION;
 let POSTPROC = 1;
+let minthickness = 10;
+let maxthickness = 40;
 
 let DIM = 2000;
 let REN = window.innerHeight * 2;
@@ -104,8 +106,8 @@ let DEBUG;
 let facecurves = [];
 
 function setupFace() {
-    let aaa = debugCanvas.width;
-    let bbb = debugCanvas.height;
+    // let aaa = debugCanvas.width;
+    // let bbb = debugCanvas.height;
 
     let pA = new Vector(rand(.4, .6), rand(.23, .26));
     let pB1 = new Vector(.23, .5);
@@ -202,8 +204,8 @@ function main() {
     SCALE = 1;
     //ASPECT = aspects[Math.floor(rand(0,1)*aspects.length)];
     ASPECT = 4 / 5;
-    VERSION = Math.floor(rand(0, 1) * 3);
-    VERSION = $fx.getParam("curve_type");
+    VERSION = Math.floor(rand(0, 1) * 7);
+    //VERSION = $fx.getParam("curve_type");
     DEBUG = $fx.getParam("debug_mode")
     EDGE_OFFSET = 0;
     if (ASPECT >= 1)
@@ -212,6 +214,8 @@ function main() {
     THICKNESS = rand(66, 77) * SCALE;
     THICKNESS = rand(20, 40) * SCALE;
     THICKNESS = rand(40, 50) * SCALE;
+
+    maxthickness = rand(40, 120);
 
     if (!canvas)
         canvas = document.getElementById("canvas");
@@ -253,7 +257,7 @@ function main() {
         randomCenters.push(new Vector(rand(0, aaa), rand(0, bbb)));
     }
 
-    // setupFace();
+    //setupFace();
     for (let k = 0; k < numcurves; k++) {
            setupCurve(k/numcurves);
     }
@@ -263,7 +267,7 @@ function main() {
     //  fixcurves();
     let numtwirls = 13;
     for (let k = 0; k < numtwirls; k++) {
-         twirl(k/numtwirls, k > numtwirls*.6);
+         twirl(k/numtwirls, k > numtwirls*.15);
     }
     // fuzz();
     //  fixcurves();
@@ -281,6 +285,8 @@ function main() {
     let miny = 999999;
     let maxy = -999999;
     // find bounding box
+    let avgx = 0;
+    let avgy = 0;
     for (let i = 0; i < curves.length; i++) {
         let curve = curves[i];
         // if(curve.thickness < 10)
@@ -291,20 +297,26 @@ function main() {
             if (p.x > maxx) maxx = p.x;
             if (p.y < miny) miny = p.y;
             if (p.y > maxy) maxy = p.y;
+            avgx += p.x;
+            avgy += p.y;
         }
     }
+    avgx /= curves.length;
+    avgy /= curves.length;
     // fit to aaa and bbb dimensons
-    let margin = aaa * .1;
+    let margin = aaa * .14;
+    margin = maxthickness*1.4;
     let pvx = rand(0, 1) > .5 ? 1 : rand(.5, 4);
     let pvy = rand(0, 1) > .5 ? 1 : rand(1, 4);
-    for (let i = 0; i < curves.length; i++) {
-        let curve = curves[i];
+    let streachf = rand(0,1)*0;
+    for (let j = 0; j < curves.length; j++) {
+        let curve = curves[j];
         for (let i = 0; i < curve.length; i++) {
             let ppx = map(curve[i].x, minx, maxx, 0, 1);
             let ppy = map(curve[i].y, miny, maxy, 0, 1);
-            if (i < curves.length / 2) {
-                curve[i].x = map(power(ppx, pvx), 0, 1, margin, aaa - margin);
-                curve[i].y = map(power(ppy, pvy), 0, 1, margin, bbb - margin);
+            if (j < curves.length*streachf) {
+                curve[i].x = map(power(ppx, 5), 0, 1, margin, aaa - margin);
+                curve[i].y = map(power(ppy, 5), 0, 1, margin, bbb - margin);
             }
             else {
                 curve[i].x = map(power(ppx, 1), 0, 1, margin, aaa - margin);
@@ -1004,6 +1016,8 @@ function constructQuads(inthickness = 5) {
             // op = 1;
             c3 = [rand(.85, 1), rand(.85, 1), rand(.85, 1)];
             let stripeThicknesss = stripeThickness * (1 + (1. - j / points.length) * 12.5 * Math.pow(noise(j * .011, i + 33), 2));
+            //console.log(stripeThickness)
+            stripeThicknesss = stripeThickness;
             if (i < curves.length - 40) {
                 // stripeThickness = rand(4, 60);
             }
@@ -1200,7 +1214,7 @@ function setupCurve(percent) {
     let curve = [];
     let pathsteps = Math.round(rand(8, 13)) * 1;
 
-    pathsteps = rand(3, 4) * 1;
+    pathsteps = rand(3, 4) * 2;
 
     let aaa = DIM;
     let bbb = Math.floor(DIM / ASPECT);
@@ -1320,7 +1334,7 @@ function setupCurve(percent) {
         curve = newcurve2;
     }
 
-    let mind0 = 800;
+    let mind0 = 1200;
     for (let i = 0; i < curve.length; i++) {
         let current = curve[i].clone();
         let closest = -1;
@@ -1339,7 +1353,7 @@ function setupCurve(percent) {
             let cp = randomCenters[closest].clone();
             let topoint = current.sub(cp);
             topoint.normalize();
-            topoint.multiplyScalar(p);
+            //topoint.multiplyScalar(p);
             topoint.add(cp);
             curve[i] = topoint.clone();
         }
@@ -1352,7 +1366,7 @@ function setupCurve(percent) {
 
     // curve = roundq(curve);
 
-    curve.thickness = 25 + 53 * Math.pow(1 - percent, 1.5);
+    curve.thickness = minthickness + (maxthickness-minthickness) * Math.pow(1 - percent, 2.5);
     curves.push(curve);
 }
 
