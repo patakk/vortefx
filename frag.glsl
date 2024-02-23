@@ -300,6 +300,7 @@ void main() {
     float hoho = hcrandom(noisy_uv.xxx*.01).x;
     gl_FragColor = vec4(vec3(v_diffuse1), .6+.4*eh);
     float ssa = smoothstep(-1.+1.4*0., -.3+1.4*0., sin((v_uv.x+12.)*(v_uv.x+12.)*6.));
+    ssa = smoothstep(-1.+1.4*0., -.3+1.4*0., sin(v_uv.y*66.));
     ssa = smoothstep(-1.+1.4*0., -.3+1.4*0., sin(v_uv.x*333.));
     float ssb = smoothstep(-1.+1.1, -.8+1.1, sin(v_uv.x*333.));
     gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(v_diffuse1*.5), pow(1.-po, .25));
@@ -328,13 +329,13 @@ void main() {
     else if(u_version < 1.01){
         c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*v_diffuse2;
         c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.1,.1,.3);
-        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.1,.4,.3);
         c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.0,.0,.6);
+        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.1,.4,.3);
         c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.99,.0,.0);
         // float qoho = hcrandom(gl_FragColor.xyx + v_diffuse1).x;
         // c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*mix(vec3(.99,.1,.1), vec3(.99,.7,.7), .9*smoothstep(.7, .99, qoho));
         gl_FragColor = vec4(vec3(c1) - .2*smoothstep(1.05,34.2,v_uv.x), eh);
-        gl_FragColor = vec4(vec3(c1)*thing+vec3(c1*.6)*(1.-thing), eh);
+        gl_FragColor = vec4(vec3(c1)*thing+vec3(.99,.0,.0)*(1.-thing), eh);
         gl_FragColor = vec4(vec3(c1), eh);
     }
     else if(u_version < 2.01){
@@ -358,8 +359,8 @@ void main() {
         c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.99,.1,.1);
         c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.1,.1,.3);
         gl_FragColor = vec4(vec3(c1) - .5*smoothstep(1.05,6.2,v_uv.x), eh);
-        gl_FragColor = vec4(vec3(c1), eh);
         gl_FragColor = vec4(vec3(c1)*thing+vec3(vec3(.1,.1,.3))*(1.-thing), eh);
+        gl_FragColor = vec4(vec3(c1), eh);
     }
     // if(v_uv.x > .1 && v_uv.x < .9 && v_uv.y > .0 && v_uv.y < .9){
     //     oo = 0.;

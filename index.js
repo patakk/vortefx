@@ -6,17 +6,6 @@ import { getPalette, shuffle } from "./palette.js";
 
 $fx.params([
     {
-        id: "curve_count",
-        name: "curve count",
-        type: "number",
-        default: 22,
-        options: {
-            min: 3,
-            max: 333,
-            step: 1,
-        },
-    },
-    {
         id: "curve_type",
         name: "curve type",
         type: "number",
@@ -26,47 +15,7 @@ $fx.params([
             max: 6,
             step: 1,
         },
-    },
-    {
-        id: "zoom",
-        name: "zoom",
-        type: "number",
-        default: 1.,
-        options: {
-            min: .5,
-            max: 2.,
-            step: .05,
-        },
-    },
-    {
-        id: "shiftx",
-        name: "shiftx",
-        type: "number",
-        default: 0,
-        options: {
-            min: -200,
-            max: 200,
-            step: 1,
-        },
-    },
-    {
-        id: "shifty",
-        name: "shifty",
-        type: "number",
-        default: 0,
-        options: {
-            min: -200,
-            max: 200,
-            step: 1,
-        },
-    },
-    {
-        id: "debug_mode",
-        name: "debug",
-        type: "boolean",
-        default: false,
-        update: "sync",
-    },
+    }
 ])
 
 let canvas;
@@ -102,6 +51,8 @@ let maxthickness = 40;
 let DIM = 2000;
 let REN = window.innerHeight * 2;
 let DEBUG;
+
+const search = new URLSearchParams(window.location.search);
 
 let facecurves = [];
 
@@ -203,10 +154,10 @@ function main() {
 
     SCALE = 1;
     //ASPECT = aspects[Math.floor(rand(0,1)*aspects.length)];
-    ASPECT = 4 / 5;
+    ASPECT = .8;
     VERSION = Math.floor(rand(0, 1) * 7);
-    //VERSION = $fx.getParam("curve_type");
-    DEBUG = $fx.getParam("debug_mode")
+    // VERSION = $fx.getParam("curve_type");
+    DEBUG = false
     EDGE_OFFSET = 0;
     if (ASPECT >= 1)
         EDGE_OFFSET = window.innerHeight * .1;
@@ -215,7 +166,26 @@ function main() {
     THICKNESS = rand(20, 40) * SCALE;
     THICKNESS = rand(40, 50) * SCALE;
 
-    maxthickness = rand(40, 120);
+    minthickness = rand(20, 200);
+    maxthickness = rand(minthickness, 300);
+    minthickness = rand(70, 80);
+    maxthickness = rand(minthickness, 111);
+
+    let thicknessVariation = Math.floor(rand(0, 1) * 3);
+    if (thicknessVariation == 0){
+        minthickness = 10;
+        maxthickness = 40;
+    }
+    else if (thicknessVariation == 1){
+        minthickness = 40;
+        maxthickness = 100;
+    }
+    else if (thicknessVariation == 2){
+        minthickness = 100;
+        maxthickness = 300;
+    }
+    minthickness = 10;
+    maxthickness = 220;
 
     if (!canvas)
         canvas = document.getElementById("canvas");
@@ -245,8 +215,12 @@ function main() {
 
     gl.viewport(0, 0, REN, Math.round(REN / ASPECT));
 
-    let numcurves = rand(5, 44);
-    numcurves = $fx.getParam("curve_count");
+    let numcurves = rand(5, 23);
+    if(rand(0,1) < .5)
+        numcurves = rand(10, 23);
+    else
+        numcurves = rand(5, 10);
+    //numcurves = $fx.getParam("curve_count");
 
     shuffle(palettes[0]);
 
@@ -258,6 +232,7 @@ function main() {
     }
 
     //setupFace();
+    numcurves = 44;
     for (let k = 0; k < numcurves; k++) {
            setupCurve(k/numcurves);
     }
@@ -265,12 +240,12 @@ function main() {
     $fx.rand.reset();
 
     //  fixcurves();
-    let numtwirls = 13;
+    let numtwirls = 11;
     for (let k = 0; k < numtwirls; k++) {
-         twirl(k/numtwirls, k > numtwirls*.15);
+         twirl(k/numtwirls, k > numtwirls*.999);
     }
     // fuzz();
-    //  fixcurves();
+    // fixcurves();
 
     for (let i = 0; i < curves.length; i++) {
         let curve = curves[i];
@@ -293,10 +268,15 @@ function main() {
         //     continue
         for (let i = 0; i < curve.length; i++) {
             let p = curve[i];
-            if (p.x < minx) minx = p.x;
-            if (p.x > maxx) maxx = p.x;
-            if (p.y < miny) miny = p.y;
-            if (p.y > maxy) maxy = p.y;
+            if(i == 0){
+                // console.log(p.x, p.y);
+                // console.log(curve.thickness)
+            }
+            const ths = 0.;
+            if (p.x-curve.thickness*ths < minx) minx = p.x-curve.thickness*ths;
+            if (p.x+curve.thickness*ths > maxx) maxx = p.x+curve.thickness*ths;
+            if (p.y-curve.thickness*ths < miny) miny = p.y-curve.thickness*ths;
+            if (p.y+curve.thickness*ths > maxy) maxy = p.y+curve.thickness*ths;
             avgx += p.x;
             avgy += p.y;
         }
@@ -305,10 +285,30 @@ function main() {
     avgy /= curves.length;
     // fit to aaa and bbb dimensons
     let margin = aaa * .14;
-    margin = maxthickness*1.4;
+    margin = aaa*.06;
+    margin = maxthickness*1.1;
+    // let width = maxx - minx;
+    // let height = maxy - miny;
+    // let scx = (aaa - margin * 2) / width;
+    // let scy = (bbb - margin * 2) / height;
+
+    // let sc = Math.min(scx, scy);
+    // for (let i = 0; i < curves.length; i++) {
+    //     let curve = curves[i];
+    //     for (let i = 0; i < curve.length; i++) {
+    //         let cx = curve[i].x;
+    //         let cy = curve[i].y;
+    //         cx = (cx-aaa/2)*scx + aaa/2;
+    //         cy = (cy-bbb/2)*scy + bbb/2;
+    //         curve[i].x = cx;
+    //         curve[i].y = cy;
+    //     }
+    // }
+
+
     let pvx = rand(0, 1) > .5 ? 1 : rand(.5, 4);
     let pvy = rand(0, 1) > .5 ? 1 : rand(1, 4);
-    let streachf = rand(0,1)*0;
+    let streachf = rand(0,1) < .85 ? rand(0, 0.) : rand(.1, .2);
     for (let j = 0; j < curves.length; j++) {
         let curve = curves[j];
         for (let i = 0; i < curve.length; i++) {
@@ -358,14 +358,13 @@ function finishupQuadInfo() {
     diffuse2 = new Float32Array(diffuse2);
     diffuse3 = new Float32Array(diffuse3);
 
-    console.log('quads', quads.length);
-    console.log('uvs', uvs.length);
-    console.log('infos', infos.length);
-    console.log('angles', angles.length);
-    console.log('diffuse1', diffuse1.length);
-    console.log('diffuse2', diffuse2.length);
-    console.log('diffuse3', diffuse3.length);
-    console.log('baj')
+    // console.log('quads', quads.length);
+    // console.log('uvs', uvs.length);
+    // console.log('infos', infos.length);
+    // console.log('angles', angles.length);
+    // console.log('diffuse1', diffuse1.length);
+    // console.log('diffuse2', diffuse2.length);
+    // console.log('diffuse3', diffuse3.length);
 }
 
 function fixcurves() {
@@ -710,10 +709,25 @@ function render() {
     let seedg = rand(0, 1);
     let seedb = rand(0, 1);
 
+    let shx = 0.;
+    let shy = 0.;
+    let zoom = 1.;
+    
+    if(search.get("shx") != null){
+        shx = parseFloat(search.get("shx"));
+    }
+    if(search.get("shy") != null){
+        shy = parseFloat(search.get("shy"));
+        console.log(shy)
+    }
+    if(search.get("zoom") != null){
+        zoom = parseFloat(search.get("zoom"));
+    }
+    console.log(search.get("shy"))
     gl.uniform3f(seedUniformLocation, seedr, seedg, seedb);
     gl.uniform1f(versionUniformLocation, VERSION);
-    gl.uniform1f(zoomUniformLocation, $fx.getParam("zoom"));
-    gl.uniform2f(shiftxyUniformLocation, $fx.getParam("shiftx"), -$fx.getParam("shifty"));
+    gl.uniform1f(zoomUniformLocation, zoom);
+    gl.uniform2f(shiftxyUniformLocation, shx, shy);
 
     let _buf1 = createAndSetupBuffer(gl, quads, gl.getAttribLocation(program, "a_position"), 3);
     let _buf2 = createAndSetupBuffer(gl, uvs, gl.getAttribLocation(program, "a_uv"), 2);
@@ -863,7 +877,10 @@ function render() {
     gl.uniform3f(gl.getUniformLocation(bgProgram, "u_margincolor"), 0.15, 0.15, 0.15);
 
     pp = palettes[Math.floor(rand(0, palettes.length))];
-    // pp = palettes[7];
+    pp = palettes[0];
+    if(rand(0,1) < .1){
+        pp = palettes[1];
+    }
     edgec = pp[Math.floor(rand(0, pp.length))];
     edgec = [1, .4, 0]
     // edgec = [0,0,0]
@@ -934,8 +951,9 @@ function constructQuads(inthickness = 5) {
     ]
 
     palette = palettes[Math.floor(rand(0, palettes.length))];
-    // palette = palettes[0];
-    console.log('palette length', palette.length)
+    palette = palettes[0];
+    if(rand(0,1) < .1)
+        palette = palettes[1];
     let npalette = [];
     // for (let k = 0; k < palette.length; k++) {
     //     let color = [];
@@ -950,7 +968,6 @@ function constructQuads(inthickness = 5) {
     //     npalette.push(color2);
     // }
     // palette = npalette;
-    console.log('palette length', palette.length)
 
     let offf = Math.floor(rand(0, palette.length))
 
@@ -1079,7 +1096,6 @@ function constructQuads(inthickness = 5) {
     }
 
 
-    console.log('total', coco);
 
 }
 
@@ -1214,7 +1230,7 @@ function setupCurve(percent) {
     let curve = [];
     let pathsteps = Math.round(rand(8, 13)) * 1;
 
-    pathsteps = rand(3, 4) * 2;
+    pathsteps = rand(4, 12);
 
     let aaa = DIM;
     let bbb = Math.floor(DIM / ASPECT);
@@ -1227,7 +1243,7 @@ function setupCurve(percent) {
     numangles = 2;
 
     while (!success && ctries++ < 10) {
-        let pos = new Vector(aaa / 2 + rand(-777, 777), bbb / 2 + rand(-777, 777)/ASPECT);
+        let pos = new Vector(aaa / 2 + rand(-555, 555), bbb / 2 + rand(-555, 555)/ASPECT);
         // pos = new Vector(aaa/2 + 600*(-1+2*noise(percent, percent+21391.)), bbb/2 + 600*(-1+2*noise(percent+1311, percent+33.)));
         let direction0 = new Vector(rand(-1, 1), rand(-1, 1));
         // let direction0 = new Vector(-1+2*noise(percent, percent+5651.), -1+2*noise(percent, percent+8865.));
@@ -1262,7 +1278,7 @@ function setupCurve(percent) {
                 hhding = Math.round(hhding / (Math.PI / numangles)) * (Math.PI / numangles);
                 direction = new Vector(Math.cos(hhding), Math.sin(hhding));
                 direction.normalize();
-                direction.multiplyScalar(SCALE * rand(50, 500));
+                direction.multiplyScalar(SCALE * rand(50, 450));
                 // direction.multiplyScalar(SCALE * map(i, 0, pathsteps-1, 200, 20));
                 // if(i%2 == 0){
                 //     direction.multiplyScalar(SCALE*rand(100, 110));
