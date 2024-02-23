@@ -1,7 +1,6 @@
 
 import { getShaderSource, createShader, createProgram } from "./webglutils.js";
 import { Vector, Quad, noiseSeed, noise } from "./utils.js";
-import { makeBlueNoiseImage, poissonDiskSampling } from "./poisson.js";
 import { getPalette, shuffle } from "./palette.js";
 
 $fx.params([
@@ -639,30 +638,6 @@ function getRandomTexture() {
     return texture;
 }
 
-function getBlueNoiseTexture() {
-    // Generate the blue noise image
-    const blueNoiseImage = makeBlueNoiseImage(256, 256, 1.5);
-    const ctx = blueNoiseImage.getContext('2d');
-
-    // Get the image data from the canvas
-    const imageData = ctx.getImageData(0, 0, blueNoiseImage.width, blueNoiseImage.height);
-    const data = new Uint8Array(imageData.data.buffer);
-
-    // Create a new texture
-    const blueNoiseTexture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, blueNoiseTexture);
-
-    // Set the parameters so we can render any size image
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-    // Upload the image data into the texture
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, blueNoiseImage.width, blueNoiseImage.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
-
-    return blueNoiseTexture;
-}
 
 function createAndSetupBuffer(gl, data, attributeLocation, size) {
     let buffer = gl.createBuffer();
