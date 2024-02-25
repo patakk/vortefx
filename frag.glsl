@@ -235,31 +235,13 @@ void main() {
     // nz = fbm3(vec3(v_uv.x * 1., v_uv.y * 1., 0.0));
 
     vec2 noisy_uv = v_uv;
-    noisy_uv.x += (.1+.9*v_diffuse2.z)*1.2*(-.5+fbm3(vec3(v_uv.x*v_diffuse2.y * 2., v_uv.y*v_diffuse2.y * 1., 31.30+v_diffuse2.x*12.31)));
-    noisy_uv.y += (.1+.9*v_diffuse2.z)*1.2*(-.5+fbm3(vec3(v_uv.x*v_diffuse2.y * 2., v_uv.y*v_diffuse2.y * 1., 14.540+ v_diffuse2.x*44.13)));
-    vec2 noisy_uv2 = v_uv;
-    noisy_uv2.x += (.1+.9*v_diffuse2.z)*2.2*(-.5+fbm3(vec3(v_uv.x*v_diffuse2.y * 6., v_uv.y*v_diffuse2.y * 4., 31.30+v_diffuse2.x*12.31)));
-    noisy_uv2.y += (.1+.9*v_diffuse2.z)*2.2*(-.5+fbm3(vec3(v_uv.x*v_diffuse2.y * 6., v_uv.y*v_diffuse2.y * 5., 14.540+ v_diffuse2.x*44.13)));
-    vec2 noisy_uv3 = v_uv;
-    noisy_uv3.x += (.1+.9*v_diffuse2.z)*2.2*(-.5+fbm3(vec3(v_uv.x*v_diffuse2.y * 6., v_uv.y*v_diffuse2.y * 4., 31.30+v_diffuse2.x*12.31)));
-    noisy_uv3.y += (.1+.9*v_diffuse2.z)*2.2*(-.5+fbm3(vec3(v_uv.x*v_diffuse2.y * 6., v_uv.y*v_diffuse2.y * 5., 14.540+ v_diffuse2.x*44.13)));
+    noisy_uv.x += .5*(-.5+fbm3(vec3(v_uv.x * .6, v_uv.y * .1, 31.30+v_diffuse1.x*12.31)));
+    noisy_uv.y += .5*(-.5+fbm3(vec3(v_uv.x * .6, v_uv.y * .1, 14.540+v_diffuse1.x*44.13)));
     float sx = power(1. - 2. * (noisy_uv.x - .5), 2.);
     float sy = power(1. - 2. * (noisy_uv.y - .5), 2.);
     float ss = smoothstep(.66*v_diffuse2.z, .9-.2*v_diffuse2.z, sx*sy);
 
-    if(u_seed.x < .5){
-        ss = smoothstep(.66, .7, sx * sy);
-    }
-
-    sx = power(1. - 2. * (v_uv.x - .5), 2.);
-    sy = power(1. - 2. * (v_uv.y - .5), 2.);
-    float ss2 = smoothstep(.01, .05, clamp(sx*sy, 0., 1.));
-     ss2 *= smoothstep(.01, .05, sx) * smoothstep(.01, .05, sy);
-
-    ss *= ss2;
-
     // gl_FragColor = vec4(vec3(v_diffuse1), nz);
-    gl_FragColor = vec4(vec3(v_diffuse1), ss);
     gl_FragColor = vec4(vec3(v_diffuse1), ss);
     gl_FragColor = vec4(vec3(v_diffuse1), ss*.6);
     gl_FragColor = vec4(vec3(v_diffuse1), 1.);
@@ -269,103 +251,42 @@ void main() {
     eh = fbm3(vec3(v_uv.x, v_uv.y*14., v_diffuse2.x))*.5+.5;
     eh = clamp(eh, 0., 1.);
     // eh = smoothstep(.3, .8, eh);
-    eh = smoothstep(.3+.3*v_diffuse2.y*0., .8, eh)*v_diffuse3.z;
+    eh = smoothstep(.3, .8, eh);
 
-
-    
-    // eh = fbm3(vec3(v_uv.x*.3, v_uv.y*11., v_diffuse2.x*2.13))*.5+.5;
-    // eh = clamp(eh, 0., 1.);
-    // eh = smoothstep(.3+.3*v_diffuse2.y*0., .8, eh);
-    // eh = smoothstep(.3+.3*v_diffuse2.y*0., .8, eh);
-
-    float nzstart = smoothstep(.0005, .0008, noisy_uv2.x);
-    float nzend = 1.-smoothstep(33.-.03, 33.-.02, noisy_uv2.x);
-
-    // gl_FragColor = vec4(fract(noisy_uv.x), fract(noisy_uv.y), 0., 1.);
-    gl_FragColor = vec4(vec3(v_diffuse1), eh);
-    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(v_diffuse2), eh);
-    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(v_diffuse2), pow(1.-po, .25));
-    gl_FragColor = vec4(vec3(v_uv.x), 1.);
-    gl_FragColor = vec4(vec3(eh), 1.);
-    gl_FragColor = vec4(vec3(v_diffuse1)*smoothstep(0.04,0.05,v_uv.y)+vec3(.9,.9,1.)*smoothstep(0.05,0.04,v_uv.y)*smoothstep(0.05,34.2,v_uv.x), eh);
     float oo = 1.;
-    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(0.0,.0,.0), eh);
-    gl_FragColor = vec4(vec3(v_diffuse1), 1.);
     float thing = smoothstep(0.04,0.05,v_uv.y);
-    float ffa = .5+.5*sin(v_uv.x*10.);
-    gl_FragColor = vec4((vec3(.93)*po+(1.-po)*vec3(.93,.93,.93))*smoothstep(0.04,0.05,v_uv.y), eh-.25*smoothstep(0.04,0.05,v_uv.y));
-    gl_FragColor = vec4(vec3(v_diffuse1), eh*nzstart*nzend);
-    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(v_diffuse1*.5), eh*(.5+.5*sin(v_uv.x*10.)));
-    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(.2,.2,.7), pow(1.-po, .25));
-    float hoho = hcrandom(noisy_uv.xxx*.01).x;
-    gl_FragColor = vec4(vec3(v_diffuse1), .6+.4*eh);
-    float ssa = smoothstep(-1.+1.4*0., -.3+1.4*0., sin((v_uv.x+12.)*(v_uv.x+12.)*6.));
-    ssa = smoothstep(-1.+1.4*0., -.3+1.4*0., sin(v_uv.y*66.));
-    ssa = smoothstep(-1.+1.4*0., -.3+1.4*0., sin(v_uv.x*333.));
-    float ssb = smoothstep(-1.+1.1, -.8+1.1, sin(v_uv.x*333.));
-    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(v_diffuse1*.5), pow(1.-po, .25));
-    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(0.99,.6,.99), eh);
-    gl_FragColor = vec4(vec3(v_diffuse1)*smoothstep(0.04,0.05,v_uv.y)+vec3(.9,.9,1.)*smoothstep(0.05,0.04,v_uv.y)*smoothstep(0.05,34.2,v_uv.x), eh);
-    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(0.1,.1,.1), eh);
-    gl_FragColor = vec4(vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(1.,0.,0.), po*eh);
-    gl_FragColor = vec4(vec3(v_diffuse1)*po+(1.-po)*vec3(0.99,.3,.0), eh*po);
-    gl_FragColor = vec4(vec3(.98)*ssb+(1.-ssb)*vec3(1.,0.,0.), eh*0.+1.);
-    gl_FragColor = vec4(vec3(v_diffuse1)*thing+vec3(v_diffuse1*.6)*(1.-thing), 1.);
-    gl_FragColor = vec4(vec3(v_diffuse1)*thing+vec3(v_diffuse1*.6)*(1.-thing), eh);
-    gl_FragColor = vec4(vec3(v_diffuse1)*hoho+vec3(v_diffuse1*vec3(0.7,.3,0.1))*(1.-hoho), eh);
-    gl_FragColor = vec4(vec3(v_diffuse1)*po, eh*po);
-    vec3 c1;
+    float ffa = .5+.5*sin(v_uv.x*(1. + 3.*v_diffuse2.x));
+    float ssa = smoothstep(-1., -.3, sin(v_uv.x*333.));
+    float ssb = smoothstep(.1, .3, sin(v_uv.x*343.));
 
-    float frq = .17+.09*v_diffuse2.x;
-    frq = .18;
-    float qx = mod(floor(gl_FragCoord.x*frq + v_diffuse1.x*12.3+v_diffuse1.y*13.1), 4.);
-    float qy = mod(floor(gl_FragCoord.y*frq + v_diffuse1.x*22.563+v_diffuse1.y*37.841), 4.);
-    qx = smoothstep(-.74,.9, sin(gl_FragCoord.y*.3 + -.3 + gl_FragCoord.x*.3*v_diffuse1.x + v_diffuse2.x*222.31));
-    qy = smoothstep(.3, .4, sin(gl_FragCoord.y*0.3 + -.02 - gl_FragCoord.x*0.3*v_diffuse1.x + v_diffuse2.x*392.31));
-    float ssc = qx;
+    vec4 result1;
+    vec4 result;
+
     if(u_version < 0.01){
-        gl_FragColor = vec4(vec3(v_diffuse1)*thing+vec3(v_diffuse1*.6)*(1.-thing), eh);
+        result = vec4(vec3(v_diffuse1)*thing+vec3(u_seed*.96)*(1.-thing), eh);
     }
     else if(u_version < 1.01){
-        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*v_diffuse2;
-        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.1,.1,.3);
-        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.0,.0,.6);
-        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.1,.4,.3);
-        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.99,.0,.0);
-        // float qoho = hcrandom(gl_FragColor.xyx + v_diffuse1).x;
-        // c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*mix(vec3(.99,.1,.1), vec3(.99,.7,.7), .9*smoothstep(.7, .99, qoho));
-        gl_FragColor = vec4(vec3(c1) - .2*smoothstep(1.05,34.2,v_uv.x), eh);
-        gl_FragColor = vec4(vec3(c1)*thing+vec3(.99,.0,.0)*(1.-thing), eh);
-        gl_FragColor = vec4(vec3(c1), eh);
+        result = vec4(v_diffuse1, eh*po);
     }
     else if(u_version < 2.01){
-        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(1.,0.,0.);
-        gl_FragColor = vec4(c1, eh*ssb);
+        result = vec4(v_diffuse1*po+(1.-po)*u_seed, eh);
     }
     else if(u_version < 3.01){
-        gl_FragColor = vec4(vec3(v_diffuse1)*ffa+(1.-ffa)*v_diffuse1, eh*sqrt(ffa));
+        result = vec4(vec3(v_diffuse1)*ffa+(1.-ffa)*v_diffuse1, eh*sqrt(ffa));
     }
     else if(u_version < 4.01){
-        gl_FragColor = vec4(vec3(v_diffuse1)*ffa+(1.-ffa)*v_diffuse1, eh*po);
+        vec3 c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*u_seed;
+        result = vec4(c1, eh*ssb);
     }
     else if(u_version < 5.01){
-        c1 = vec3(v_diffuse1)*ffa+(1.-ffa)*v_diffuse1;
-        gl_FragColor = vec4(c1*po+(1.-po)*vec3(1.,0.,0.), eh);
+        vec3 c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*u_seed;
+        result = vec4(vec3(c1), eh);
     }
     else if(u_version < 6.01){
-        // c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(1.,0.,0.);
-        // gl_FragColor = vec4(v_diffuse1, ssc);
-        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*v_diffuse2;
-        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.99,.1,.1);
-        c1 = vec3(v_diffuse1)*ssa+(1.-ssa)*vec3(.1,.1,.3);
-        gl_FragColor = vec4(vec3(c1) - .5*smoothstep(1.05,6.2,v_uv.x), eh);
-        gl_FragColor = vec4(vec3(c1)*thing+vec3(vec3(.1,.1,.3))*(1.-thing), eh);
-        gl_FragColor = vec4(vec3(c1), eh);
+        ssa = smoothstep(-1.+1.4*0., -.3+1.4*0., sin(noisy_uv.x*333.));
+        vec3 c1 = mix(vec3(v_diffuse1), vec3(u_seed), smoothstep(.0, .999, 1.-v_uv.y))*ssa+(1.-ssa)*mix(u_seed, u_seed*.7, smoothstep(.0, .999, v_uv.y));
+        result = vec4(vec3(c1), eh);
     }
-    // if(v_uv.x > .1 && v_uv.x < .9 && v_uv.y > .0 && v_uv.y < .9){
-    //     oo = 0.;
-    // }
-    // oo *= v_uv.y;
-    // gl_FragColor = vec4(color.r,color.r,color.r, oo);
-    //gl_FragColor = vec4(color.r,color.r,color.r, 1.);
+    // result.rgb = mix(result.rgb, u_seed, ffa);
+    gl_FragColor = result;
 }

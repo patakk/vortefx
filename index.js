@@ -3,23 +3,7 @@ import { getShaderSource, createShader, createProgram } from "./webglutils.js";
 import { Vector, Quad, noiseSeed, noise } from "./utils.js";
 import { getPalette, shuffle } from "./palette.js";
 
-$fx.params([
-    {
-        id: "curve_type",
-        name: "curve type",
-        type: "number",
-        default: 0,
-        options: {
-            min: 0,
-            max: 6,
-            step: 1,
-        },
-    }
-])
-
 let canvas;
-let debugCanvas;
-let debugCtx;
 let gl;
 
 let curves = [];
@@ -53,92 +37,13 @@ let DEBUG;
 
 const search = new URLSearchParams(window.location.search);
 
-let facecurves = [];
-
-function setupFace() {
-    // let aaa = debugCanvas.width;
-    // let bbb = debugCanvas.height;
-
-    let pA = new Vector(rand(.4, .6), rand(.23, .26));
-    let pB1 = new Vector(.23, .5);
-    let pB2 = new Vector(.77, .5);
-
-    let pA1 = new Vector(pA.x, .5);
-    let pA2 = new Vector(pA.x, .55);
-    let off1 = map(pA.x, pB1.x, pB2.x, -1, 1) * .2;
-    let pA3 = new Vector(pA.x + off1, .5);
-    let pA4 = new Vector(pA.x - off1, .5);
-
-    let nosecurve = [];
-
-    nosecurve.push(pA);
-    nosecurve.push(pA3);
-    nosecurve.push(pA2);
-    nosecurve.push(pA4);
-
-    facecurves.push(nosecurve);
-
-    if (DEBUG) {
-        debugCtx.lineWidth = 4;
-        debugCtx.strokeStyle = "blue";
-        debugCtx.beginPath();
-        debugCtx.arc(pB1.x * aaa, pB1.y * bbb, 33, 0, Math.PI * 2);
-        debugCtx.stroke();
-        debugCtx.strokeStyle = "green";
-        debugCtx.beginPath();
-        debugCtx.arc(pB2.x * aaa, pB2.y * bbb, 33, 0, Math.PI * 2);
-        debugCtx.stroke();
-        debugCtx.strokeStyle = "red";
-        debugCtx.beginPath();
-        debugCtx.arc(pA.x * aaa, pA.y * bbb, 7, 0, Math.PI * 2);
-        debugCtx.arc(pA1.x * aaa, pA1.y * bbb, 7, 0, Math.PI * 2);
-        debugCtx.arc(pA2.x * aaa, pA2.y * bbb, 7, 0, Math.PI * 2);
-        debugCtx.arc(pA3.x * aaa, pA3.y * bbb, 7, 0, Math.PI * 2);
-        debugCtx.arc(pA4.x * aaa, pA3.y * bbb, 7, 0, Math.PI * 2);
-        debugCtx.stroke();
-    }
-}
-
-function fuzz(){
-    let aaa = DIM;
-    let bbb = Math.floor(DIM / ASPECT);
-    for(let k = 0; k < 1; k++){
-        for(let i = 0; i < curves.length; i++){
-            let curve = curves[i];
-            for(let i = 0; i < curve.length; i++){
-                let p = curve[i];
-                let distfromcenter = p.distance(new Vector(aaa*3/4, bbb*2/3));
-                let factor = 1. - distfromcenter / Math.min(aaa, bbb) * 2;
-                let vecfromcenter = p.clone().sub(new Vector(aaa*3/4, bbb*2/3)).normalize();
-                let angle = vecfromcenter.heading() + Math.PI/2;
-                let movevec = new Vector(Math.cos(angle), Math.sin(angle));
-                movevec.scale(power(noise(.001*p.x, .001*p.y, 333), 3));
-                p.x += 333*movevec.x;
-                p.y += 333*movevec.y;
-            }
-        }
-        for(let i = 0; i < curves.length; i++){
-            let curve = curves[i];
-            for(let i = 0; i < curve.length; i++){
-                let p = curve[i];
-                let distfromcenter = p.distance(new Vector(aaa/4, bbb*2/3));
-                let factor = 1. - distfromcenter / Math.min(aaa, bbb) * 2;
-                let vecfromcenter = p.clone().sub(new Vector(aaa/4, bbb*2/3)).normalize();
-                let angle = vecfromcenter.heading() + Math.PI/2;
-                let movevec = new Vector(Math.cos(angle), Math.sin(angle));
-                movevec.scale(power(noise(.001*p.x, .001*p.y, 333), 3));
-                p.x += 333*movevec.x;
-                p.y += 333*movevec.y;
-            }
-        }
-    }
-   
-}
 
 
 function main() {
-    // updateURLParameter('hash', btoa(JSON.stringify({"hash": hash, "aspect": Math.round(aaspect*10000)/10000, 'version': vversion})).toString('base64'));
-
+    
+    if(search.get("resx") != null){
+        REN = parseFloat(search.get("resx"));
+    }
     noiseSeed(Math.floor(rand(0, 1) * 10000));
     palettes = getPalette().palettes
     curveslengths = [];
@@ -152,12 +57,10 @@ function main() {
     diffuse3 = [];
 
     SCALE = 1;
-    //ASPECT = aspects[Math.floor(rand(0,1)*aspects.length)];
     ASPECT = .8;
-    VERSION = Math.floor(rand(0, 1) * 7);
-    // VERSION = $fx.getParam("curve_type");
+    VERSION = Math.floor((1.-Math.pow(rand(0, 1), 1.2)) * 7);
     DEBUG = false
-    EDGE_OFFSET = 0;
+    EDGE_OFFSET = window.innerHeight * .035;
     if (ASPECT >= 1)
         EDGE_OFFSET = window.innerHeight * .1;
     THICKNESS = 70 * SCALE;
@@ -189,21 +92,6 @@ function main() {
     if (!canvas)
         canvas = document.getElementById("canvas");
 
-    if (!debugCanvas && DEBUG) {
-        debugCanvas = document.createElement('canvas');
-        debugCanvas.id = 'debugCanvas';
-        debugCanvas.width = 900; // Set your desired width
-        debugCanvas.height = 900 / ASPECT; // Set your desired height
-        debugCanvas.style.position = 'absolute';
-        // set debugCanvas style left the same as computed canvas lefet
-        debugCanvas.style.top = '0px';
-        debugCanvas.style.pointerEvents = 'none'; // Make it non-interactive
-        document.body.appendChild(debugCanvas);
-        debugCtx = debugCanvas.getContext('2d');
-        debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-    }
-    if(debugCanvas)
-        debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
 
     onresize(null);
     if (!gl)
@@ -216,7 +104,7 @@ function main() {
 
     let numcurves = rand(5, 23);
     if(rand(0,1) < .5)
-        numcurves = rand(10, 23);
+        numcurves = rand(10, 33);
     else
         numcurves = rand(5, 10);
     //numcurves = $fx.getParam("curve_count");
@@ -230,21 +118,20 @@ function main() {
         randomCenters.push(new Vector(rand(0, aaa), rand(0, bbb)));
     }
 
-    //setupFace();
-    numcurves = 44;
+    // numcurves = 44;
     for (let k = 0; k < numcurves; k++) {
            setupCurve(k/numcurves);
     }
 
     $fx.rand.reset();
 
-    //  fixcurves();
-    let numtwirls = 11;
+    let numtwirls = 13;
+    if(rand(0,1) < .15 && numcurves > 26)
+        numtwirls = 1;
+    let subdivcutoff = rand(0, 1) < .5 ? .5 : rand(.9, .99);
     for (let k = 0; k < numtwirls; k++) {
-         twirl(k/numtwirls, k > numtwirls*.999);
+         twirl(k/numtwirls, k > numtwirls*subdivcutoff);
     }
-    // fuzz();
-    // fixcurves();
 
     for (let i = 0; i < curves.length; i++) {
         let curve = curves[i];
@@ -340,12 +227,7 @@ function main() {
     finishupQuadInfo();
 
     render();
-    if (DEBUG) {
-        debugCanvas.style.left = window.getComputedStyle(canvas).left;
-        debugCanvas.style.top = window.getComputedStyle(canvas).top;
-        debugCanvas.style.width = window.getComputedStyle(canvas).width;
-        debugCanvas.style.height = window.getComputedStyle(canvas).height;
-    }
+    $fx.preview();
 }
 
 function finishupQuadInfo() {
@@ -430,17 +312,6 @@ function twirl(percent, subdivide = false) {
     // maxdist = Math.min(aaa,bbb)/3*rand(1.25-percent, 2-percent);
     maxdist = Math.min(aaa, bbb) / 3 * rand(1.4, 2);
 
-    if (DEBUG) {
-        let dx = map(cx, 0, aaa, 0, debugCanvas.width);
-        let dy = map(cy, 0, bbb, debugCanvas.height, 0);
-        let dmaxdist = map(maxdist, 0, aaa, 0, debugCanvas.width);
-        let size = 4;
-        debugCtx.strokeStyle = "black";
-        debugCtx.lineWidth = 4;
-        debugCtx.beginPath();
-        debugCtx.arc((dx - debugCanvas.width / 2) * .9999 + debugCanvas.width / 2, (dy - debugCanvas.height / 2) * .9999 + debugCanvas.height / 2, dmaxdist / 4 * strength, 0, Math.PI * 2);
-        debugCtx.stroke();
-    }
 
     let twfrq = 3.;
     let smuvec = new Vector(1, 0);
@@ -564,48 +435,8 @@ function constructCurves() {
     // averagepos.y = bbb/2 - averagepos.y;
     // console.log(averagepos)
 
-    console.log('total', coco);
+    // console.log('total', coco);
     addquadpointstoattributes(p1, p2, p3, p4, [0, 0], [1, 0], [0, 1], [1, 1], 0, p1.clone(), 0, [1, 0, 0]);
-}
-
-function previewCurves() {
-    let debugcanvas;
-    if (!debugcanvas)
-        debugcanvas = document.getElementById("debugcanvas");
-    debugcanvas.width = REN;
-    debugcanvas.height = Math.round(REN / ASPECT);
-
-    debugcanvas.style.width = 500 + "px";
-    debugcanvas.style.height = Math.round(500 / ASPECT) + "px";;
-    let ctx = debugcanvas.getContext('2d');
-    ctx.clearRect(0, 0, debugcanvas.width, debugcanvas.height);
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, debugcanvas.width, debugcanvas.height);
-    ctx.lineWidth = 44;
-    ctx.fillStyle = "#ffffff";
-    for (let i = 0; i < curves.length; i++) {
-        let points = curves[i];
-        for (let j = 0; j < points.length - 1; j++) {
-            let pt1 = points[j];
-            let pt2 = points[j + 1];
-            let dist = pt1.distance(pt2);
-            let parts = dist / 40;
-            parts = 1;
-            for (let k = 0; k < parts; k++) {
-                let t = k / parts;
-                let x = t * pt1.x + (1 - t) * pt2.x;
-                let y = t * pt1.y + (1 - t) * pt2.y;
-                y = debugcanvas.height - y * 1;
-                ctx.fillRect(x * 1 - 33 / 2, y - 33 / 2, 33, 33);
-            }
-        }
-    }
-    for (let k = 0; k < randomCenters.length; k++) {
-
-        ctx.fillStyle = "#ff0000";
-        ctx.fillRect(randomCenters[k].y * 1 - 100 / 2, randomCenters[k].x - 100 / 2, 100, 100);
-    }
-
 }
 
 function getRandomTexture() {
@@ -680,25 +511,35 @@ function render() {
 
     let randomtexture = getRandomTexture();
 
-    let seedr = rand(0, 1);
-    let seedg = rand(0, 1);
-    let seedb = rand(0, 1);
+    let _c = palettes[0][Math.floor(rand(0, palettes[0].length))];
+    // console.log(_c)
+    if(rand(0,1) < -.25){
+        if(rand(0,1) < .75){
+            _c = [1,0,0];
+        }
+        else{
+            _c = [.04,0.1,.3]
+        }
+    }
+
+    let seedr = _c[0];
+    let seedg = _c[1];
+    let seedb = _c[2];
 
     let shx = 0.;
     let shy = 0.;
     let zoom = 1.;
     
-    if(search.get("shx") != null){
-        shx = parseFloat(search.get("shx"));
+    if(search.get("dx") != null){
+        shx = parseFloat(search.get("dx"));
     }
-    if(search.get("shy") != null){
-        shy = parseFloat(search.get("shy"));
-        console.log(shy)
+    if(search.get("dy") != null){
+        shy = parseFloat(search.get("dy"));
     }
-    if(search.get("zoom") != null){
-        zoom = parseFloat(search.get("zoom"));
+    if(search.get("scale") != null){
+        zoom = parseFloat(search.get("scale"));
     }
-    console.log(search.get("shy"))
+
     gl.uniform3f(seedUniformLocation, seedr, seedg, seedb);
     gl.uniform1f(versionUniformLocation, VERSION);
     gl.uniform1f(zoomUniformLocation, zoom);
@@ -910,25 +751,17 @@ function constructQuads(inthickness = 5) {
     green = [rand(0., .5), rand(0.5, 1.), rand(0., .5)];
     blue = [rand(0., .5), rand(0., .5), rand(0.5, 1.)];
 
-    let sshfx = rand(-stripeThickness, stripeThickness);
-
-    let movingcenter = new Vector(aaa / 2, bbb / 2);
-    let movingradius = 200;
-    let movingstartangle = rand(0, 2 * Math.PI);
-    let movinganglediff = 2 * Math.PI * .1;
-
-    let palette = [
-        [rand(0.7, 1), rand(0, .2), rand(0, .2)],
-        [rand(0., .2), rand(0., .2), rand(0.7, 1)],
-        [rand(0.7, 1), rand(0.7, 1), rand(0, .2)],
-        [rand(0.7, 1), rand(0.7, 1), rand(0, .2)],
-        [0, 0, 0]
-    ]
-
-    palette = palettes[Math.floor(rand(0, palettes.length))];
-    palette = palettes[0];
-    if(rand(0,1) < .1)
-        palette = palettes[1];
+    let palette = palettes[0];
+    //palette = palettes[Math.floor(rand(0, palettes.length))];
+    if(rand(0,1) < .05 && VERSION > 0){
+        if(rand(0,1) < .5){
+            palette = palettes[1];
+        }
+        else{
+            palette = palettes[2];
+        
+        }
+    }
     let npalette = [];
     // for (let k = 0; k < palette.length; k++) {
     //     let color = [];
@@ -1007,6 +840,7 @@ function constructQuads(inthickness = 5) {
             op = clamp(op, 0.0, 1);
             // op = 1;
             c3 = [rand(.85, 1), rand(.85, 1), rand(.85, 1)];
+            // c3 = palette[Math.floor(rand(0, palette.length))];
             let stripeThicknesss = stripeThickness * (1 + (1. - j / points.length) * 12.5 * Math.pow(noise(j * .011, i + 33), 2));
             //console.log(stripeThickness)
             stripeThicknesss = stripeThickness;
@@ -1394,25 +1228,12 @@ window.onload = main;
 window.addEventListener('resize', onresize, false);
 
 
-
-
-$fx.on(
-  "params:update",
-  newRawValues => {
-    DEBUG = newRawValues.debug_mode;
-    $fx.rand.reset();
-    main();
-  },
-  () => {}
-)
-
-
 document.addEventListener('keydown', function (event) {
     if (event.key == 's') {
         save();
     }
     if (event.key == 'q') {
-        main();
+        // main();
     }
 });
 
@@ -1454,16 +1275,14 @@ let ismousedown = false;
 document.addEventListener('mousedown', function (event) {
     // console.log(event);
     ismousedown = true;
-    if (DEBUG)
-        handleZoom(event);
+    //handleZoom(event);
 });
 
 // mosue drag
 document.addEventListener('mousemove', function (event) {
     // console.log(event);
     if (ismousedown) {
-        if (DEBUG)
-            handleZoom(event);
+        //handleZoom(event);
     }
 
 });
@@ -1510,7 +1329,7 @@ function save() {
     console.log('preparing canvas for saving...');
     const dataURL = canvas.toDataURL('image/png');
     const link = document.createElement('a');
-    link.download = 'vortex_' + $fx.hash + '.png';
+    link.download = 'buso_' + $fx.hash + '.png';
     // link.href = imgElement.src;
     link.href = dataURL;
     link.click();
