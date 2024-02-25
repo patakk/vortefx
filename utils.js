@@ -1,1 +1,199 @@
-export class Quad{constructor(t,i,s,e){this.p1=t,this.p2=i,this.p3=s,this.p4=e}rotate(t){this.p1.rotate(t),this.p2.rotate(t),this.p3.rotate(t),this.p4.rotate(t)}rotateOff(t,i){this.p1.sub(i).rotate(t).add(i),this.p2.sub(i).rotate(t).add(i),this.p3.sub(i).rotate(t).add(i),this.p4.sub(i).rotate(t).add(i)}}export class Vector{constructor(t,i,s=0,e=0,r=0){this.x=t,this.y=i,this.z=s,this.u=e,this.v=r}add(t){return this.x+=t.x,this.y+=t.y,this.z+=t.z,this}sub(t){return this.x-=t.x,this.y-=t.y,this.z-=t.z,this}normalize(){let t=Math.sqrt(this.x*this.x+this.y*this.y);return this.x/=t,this.y/=t,this}rotate(t){let i=this.x*Math.cos(t)-this.y*Math.sin(t),s=this.x*Math.sin(t)+this.y*Math.cos(t);return this.x=i,this.y=s,this}clone(){return new Vector(this.x,this.y,this.z,this.u,this.v)}heading(){return Math.atan2(this.y,this.x)}dot(t){return this.x*t.x+this.y*t.y+this.z*t.z}multiplyScalar(t){return this.x*=t,this.y*=t,this}scale(t){return this.x*=t,this.y*=t,this}length(){return Math.sqrt(this.x*this.x+this.y*this.y)}distance(t){return Math.sqrt(Math.pow(this.x-t.x,2)+Math.pow(this.y-t.y,2))}}let PERLIN_YWRAPB=4,PERLIN_YWRAP=16,PERLIN_ZWRAPB=8,PERLIN_ZWRAP=256,PERLIN_SIZE=4095,perlin_octaves=4,perlin_amp_falloff=.5,scaled_cosine=t=>.5*(1-Math.cos(t*Math.PI)),perlin;export function noise(t,i=0,s=0){if(null==perlin){perlin=Array(4096);for(let e=0;e<4096;e++)perlin[e]=$fx.rand()}t<0&&(t=-t),i<0&&(i=-i),s<0&&(s=-s);let r=Math.floor(t),h=Math.floor(i),n=Math.floor(s),l=t-r,o=i-h,a=s-n,p,$,c=0,u=.5,d,x,y;for(let _=0;_<perlin_octaves;_++){let f=r+(h<<4)+(n<<8);p=scaled_cosine(l),$=scaled_cosine(o),d=perlin[4095&f],d+=p*(perlin[f+1&4095]-d),x=perlin[f+16&4095],x+=p*(perlin[f+16+1&4095]-x),d+=$*(x-d),f+=256,x=perlin[4095&f],x+=p*(perlin[f+1&4095]-x),y=perlin[f+16&4095],y+=p*(perlin[f+16+1&4095]-y),x+=$*(y-x),d+=scaled_cosine(a)*(x-d),c+=d*u,u*=perlin_amp_falloff,r<<=1,h<<=1,o*=2,n<<=1,a*=2,(l*=2)>=1&&(r++,l--),o>=1&&(h++,o--),a>=1&&(n++,a--)}return c}export function noiseDetail(t,i){t>0&&(perlin_octaves=t),i>0&&(perlin_amp_falloff=i)}export function noiseSeed(t){let i,s,e={setSeed(t){s=i=(null==t?4294967296*$fx.rand():t)>>>0},getSeed:()=>i,rand:()=>(s=(1664525*s+1013904223)%4294967296)/4294967296};e.setSeed(t),perlin=Array(4096);for(let r=0;r<4096;r++)perlin[r]=e.rand()}
+export class Vector{
+    constructor(x, y, z=0, u=0, v=0){
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.u = u;
+        this.v = v;
+    }
+
+    add(vec){
+        this.x += vec.x;
+        this.y += vec.y;
+        this.z += vec.z;
+        return this;
+    }
+
+    sub(vec){
+        this.x -= vec.x;
+        this.y -= vec.y;
+        this.z -= vec.z;
+        return this;
+    }
+
+    normalize(){
+        let length = Math.sqrt(this.x*this.x + this.y*this.y);
+        this.x /= length;
+        this.y /= length;
+        return this;
+    }
+
+    rotate(angle){
+        let newX = this.x * Math.cos(angle) - this.y * Math.sin(angle);
+        let newY = this.x * Math.sin(angle) + this.y * Math.cos(angle);
+        this.x = newX;
+        this.y = newY;
+        return this;
+    }
+
+    clone(){
+        return new Vector(this.x, this.y, this.z, this.u, this.v);
+    }
+
+    heading(){
+        return Math.atan2(this.y, this.x);
+    }
+
+    dot(vec){
+        return this.x * vec.x + this.y * vec.y + this.z * vec.z;
+    }
+
+    multiplyScalar(scalar) {
+        this.x *= scalar;
+        this.y *= scalar;
+        return this;
+    }
+
+    scale(scalar) {
+        this.x *= scalar;
+        this.y *= scalar;
+        return this;
+    }
+
+    length(){
+        return Math.sqrt(this.x*this.x + this.y*this.y);
+    }
+
+    distance(vec){
+        return Math.sqrt(Math.pow(this.x - vec.x, 2) + Math.pow(this.y - vec.y, 2));
+    }
+    
+}
+
+
+// the following code implements perlin noise and is taken from p5.js
+const PERLIN_YWRAPB = 4;
+const PERLIN_YWRAP = 1 << PERLIN_YWRAPB;
+const PERLIN_ZWRAPB = 8;
+const PERLIN_ZWRAP = 1 << PERLIN_ZWRAPB;
+const PERLIN_SIZE = 4095;
+
+let perlin_octaves = 4;
+let perlin_amp_falloff = 0.5;
+
+const scaled_cosine = i => 0.5 * (1.0 - Math.cos(i * Math.PI));
+let perlin;
+
+
+export function noise(x, y = 0, z = 0) {
+    if (perlin == null) {
+        perlin = new Array(PERLIN_SIZE + 1);
+        for (let i = 0; i < PERLIN_SIZE + 1; i++) {
+            perlin[i] = $fx.rand();
+        }
+    }
+
+    if (x < 0) {
+        x = -x;
+    }
+    if (y < 0) {
+        y = -y;
+    }
+    if (z < 0) {
+        z = -z;
+    }
+
+    let xi = Math.floor(x),
+        yi = Math.floor(y),
+        zi = Math.floor(z);
+    let xf = x - xi;
+    let yf = y - yi;
+    let zf = z - zi;
+    let rxf, ryf;
+
+    let r = 0;
+    let ampl = 0.5;
+
+    let n1, n2, n3;
+
+    for (let o = 0; o < perlin_octaves; o++) {
+        let of = xi + (yi << PERLIN_YWRAPB) + (zi << PERLIN_ZWRAPB);
+
+        rxf = scaled_cosine(xf);
+        ryf = scaled_cosine(yf);
+
+        n1 = perlin[of & PERLIN_SIZE];
+        n1 += rxf * (perlin[(of + 1) & PERLIN_SIZE] - n1);
+        n2 = perlin[(of + PERLIN_YWRAP) & PERLIN_SIZE];
+        n2 += rxf * (perlin[(of + PERLIN_YWRAP + 1) & PERLIN_SIZE] - n2);
+        n1 += ryf * (n2 - n1);
+
+        of += PERLIN_ZWRAP;
+        n2 = perlin[of & PERLIN_SIZE];
+        n2 += rxf * (perlin[(of + 1) & PERLIN_SIZE] - n2);
+        n3 = perlin[(of + PERLIN_YWRAP) & PERLIN_SIZE];
+        n3 += rxf * (perlin[(of + PERLIN_YWRAP + 1) & PERLIN_SIZE] - n3);
+        n2 += ryf * (n3 - n2);
+
+        n1 += scaled_cosine(zf) * (n2 - n1);
+
+        r += n1 * ampl;
+        ampl *= perlin_amp_falloff;
+        xi <<= 1;
+        xf *= 2;
+        yi <<= 1;
+        yf *= 2;
+        zi <<= 1;
+        zf *= 2;
+
+        if (xf >= 1.0) {
+            xi++;
+            xf--;
+        }
+        if (yf >= 1.0) {
+            yi++;
+            yf--;
+        }
+        if (zf >= 1.0) {
+            zi++;
+            zf--;
+        }
+    }
+    return r;
+};
+
+export function noiseDetail(lod, falloff) {
+    if (lod > 0) {
+        perlin_octaves = lod;
+    }
+    if (falloff > 0) {
+        perlin_amp_falloff = falloff;
+    }
+};
+
+export function noiseSeed(seed) {
+    const lcg = (() => {
+        const m = 4294967296;
+        const a = 1664525;
+        const c = 1013904223;
+        let seed, z;
+        return {
+            setSeed(val) {
+                z = seed = (val == null ? $fx.rand() * m : val) >>> 0;
+            },
+            getSeed() {
+                return seed;
+            },
+            rand() {
+                z = (a * z + c) % m;
+                return z / m;
+            }
+        };
+    })();
+
+    lcg.setSeed(seed);
+    perlin = new Array(PERLIN_SIZE + 1);
+    for (let i = 0; i < PERLIN_SIZE + 1; i++) {
+        perlin[i] = lcg.rand();
+    }
+};
