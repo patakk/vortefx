@@ -38,11 +38,13 @@ let DEBUG;
 const search = new URLSearchParams(window.location.search);
 
 
-
 function main() {
     
     if(search.get("resx") != null){
         REN = parseFloat(search.get("resx"));
+    }
+    if($fx.isPreview){
+        REN = 1800;
     }
     noiseSeed(Math.floor(rand(0, 1) * 10000));
     palettes = getPalette().palettes
@@ -63,6 +65,11 @@ function main() {
     EDGE_OFFSET = window.innerHeight * .035;
     if (ASPECT >= 1)
         EDGE_OFFSET = window.innerHeight * .1;
+    if($fx.isPreview){
+        EDGE_OFFSET = 0;
+    }
+    
+
     THICKNESS = 70 * SCALE;
     THICKNESS = rand(66, 77) * SCALE;
     THICKNESS = rand(20, 40) * SCALE;
@@ -90,12 +97,14 @@ function main() {
     maxthickness = 220;
 
     if (!canvas)
-        canvas = document.getElementById("canvas");
+        canvas = document.getElementById("busocanvas");
 
 
     onresize(null);
-    if (!gl)
-        gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, antialias: true, depth: true });
+    if (!gl){
+        //gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, antialias: true, depth: true });
+        gl = canvas.getContext('webgl', { preserveDrawingBuffer: true, antialias: true});
+    }
 
     gl.canvas.width = REN;
     gl.canvas.height = Math.round(REN / ASPECT);
@@ -126,8 +135,6 @@ function main() {
     $fx.rand.reset();
 
     let numtwirls = 13;
-    if(rand(0,1) < .15 && numcurves > 26)
-        numtwirls = 1;
     let subdivcutoff = rand(0, 1) < .5 ? .5 : rand(.9, .99);
     for (let k = 0; k < numtwirls; k++) {
          twirl(k/numtwirls, k > numtwirls*subdivcutoff);
@@ -605,13 +612,11 @@ function render() {
     gl.clearColor(0.9254902, 0.87156863, 0.84588235, 1.);
 
     let chc = Math.floor(rand(0, 3));
-    chc = 2;
     if (chc == 0) {
         // gl.clearColor(0.051254902, 0.0512156863, 0.0510588235, 1.);
-        gl.clearColor(0.051254902, 0.051254902, 0.051254902, 1.);
+        gl.clearColor(0.07, 0.07, 0.07, 1.);
     }
     else if (chc == 1) {
-        gl.clearColor(0.9254902, 0.9254902, 0.9254902, 1.);
     }
     else if (chc == 2) {
         gl.clearColor(0.5,.4,.4, 1.);
@@ -620,45 +625,16 @@ function render() {
     let pp = palettes[Math.floor(rand(0, palettes.length))];
     let edgec = pp[Math.floor(rand(0, pp.length))];
     // gl.clearColor(edgec[0], edgec[1], edgec[2], 1.);
-    gl.clearColor(1., 1., 1., 1.);
+    //gl.clearColor(1., 1., 1., 1.);
+    gl.clearColor(0.98, 0.98, 0.98, 1.);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    let numQuads = quads.length / 8;
-    let numInfos = infos.length / 12;
-    let curve = curves[0];
-    // for (let i = 0; i < numQuads; i++) {
-    //     const offset = i * 4; // 4 vertices per quad
-    //     gl.drawArrays(gl.TRIANGLE_STRIP, offset, 4);
-    // }
     let offset = 0;
     for (let i = 0; i < curves.length; i++) {
         let cl = curveslengths[i];
         gl.drawArrays(gl.TRIANGLE_STRIP, offset, cl);
         offset += cl;
     }
-
-    // for (let i = 0; i < numQuads; i++) {
-    //     const offset = i * 4; // 4 vertices per quad
-    //     gl.drawArrays(gl.LINES, offset, 4);
-    // }
-    // gl.drawArrays(gl.LINE_STRIP, 0, 4);
-
-
-    // Create a new framebuffer to resolve multisampling into
-    // let resolveFramebuffer = gl.createFramebuffer();
-    // gl.bindFramebuffer(gl.FRAMEBUFFER, resolveFramebuffer);
-    // gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-
-    // Blit the multisampled renderbuffer to the texture
-    // gl.bindFramebuffer(gl.READ_FRAMEBUFFER, framebuffer);
-    // gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, resolveFramebuffer);
-    // gl.blitFramebuffer(
-    //     0, 0, 100, Math.round(100/ASPECT),  // src rectangle
-    //     0, 0, 100, Math.round(100/ASPECT),  // dst rectangle
-    //     gl.COLOR_BUFFER_BIT,  // buffer mask
-    //     gl.LINEAR  // interpolation
-    // );
-
 
     const quadVertices = [
         -1, -1,
@@ -1102,19 +1078,7 @@ function setupCurve(percent) {
             pos = newPos;
             curve.push(newPos);
         }
-        // curve.push(new Vector(aaa/2 + rand(-666, 666), bbb/2 + rand(-666, 666)));
-
         success = true;
-        // for(let i = 0; i < curve.length; i++){
-        //     let newPos = curve[i];
-        //     if(newPos.x < margin || newPos.x > aaa-margin || newPos.y < margin || newPos.y > bbb-margin){
-        //         success = false;
-        //         break;
-        //     }
-        // }
-        for (let i = 0; i < curve.length; i++) {
-            // curve[i].add(new Vector(0, -bbb*random(-.1,.5)));
-        }
     }
 
     // subdividecurve
@@ -1141,8 +1105,6 @@ function setupCurve(percent) {
         lele = 14;
         for (let i = 0; i < curve.length - 15; i++) {
             let p = new Vector(0, 0);
-            // if(rand(0,1) < .01)
-            //     lele = rand(1,3);
             lele = 14;
 
             if (lele > 0) {
@@ -1183,14 +1145,6 @@ function setupCurve(percent) {
             curve[i] = topoint.clone();
         }
     }
-
-    // console.log(ctries)
-    // const roundq = vectors => vectors.map(q => 
-    //     new Vector(Math.round(q.x/555)*555, Math.round(q.y/555)*555)
-    // );
-
-    // curve = roundq(curve);
-
     curve.thickness = minthickness + (maxthickness-minthickness) * Math.pow(1 - percent, 2.5);
     curves.push(curve);
 }
@@ -1223,21 +1177,6 @@ function power(p, g) {
         return 1 - 0.5 * Math.pow(2 * (1 - p), g);
 }
 
-// on load html, no jquery
-window.onload = main;
-window.addEventListener('resize', onresize, false);
-
-
-document.addEventListener('keydown', function (event) {
-    if (event.key == 's') {
-        save();
-    }
-    if (event.key == 'q') {
-        // main();
-    }
-});
-
-
 function handleWindowSize() {
     let clientWidth = window.innerWidth;
     let clientHeight = window.innerHeight;
@@ -1251,8 +1190,6 @@ function handleWindowSize() {
         sw = Math.round(clientWidth) - EDGE_OFFSET * 2;
         sh = Math.round(sw / aspect);
     }
-    // canvas.width = sw;
-    // canvas.height = sh;
     canvas.style.width = sw + 'px';
     canvas.style.height = sh + 'px';
     canvas.style.position = 'absolute';
@@ -1261,76 +1198,23 @@ function handleWindowSize() {
 }
 
 function onresize(event) {
-    // // set width and height, full screen
-    // canvas.width = window.innerWidth*SCALE;
-    // canvas.height = window.innerHeight*SCALE;
-    // canvas.style.width = window.innerWidth + "px";
-    // canvas.style.height = window.innerHeight + "px";
     handleWindowSize();
 }
-
-
-// handle mouse clicke
-let ismousedown = false;
-document.addEventListener('mousedown', function (event) {
-    // console.log(event);
-    ismousedown = true;
-    //handleZoom(event);
-});
-
-// mosue drag
-document.addEventListener('mousemove', function (event) {
-    // console.log(event);
-    if (ismousedown) {
-        //handleZoom(event);
-    }
-
-});
-
-document.addEventListener('mouseup', function (event) {
-    // console.log(event);
-    ismousedown = false;
-    handleWindowSize();
-});
-
-
-function handleZoom(event) {
-    let clientWidth = window.innerWidth;
-    let clientHeight = window.innerHeight;
-    let caspect = (clientWidth - EDGE_OFFSET * 2) / (clientHeight - EDGE_OFFSET * 2);
-    let aspect = ASPECT;
-    let sw, sh;
-    if (caspect > aspect) {
-        sh = Math.round(clientHeight) - EDGE_OFFSET * 2;
-        sw = Math.round(sh * aspect);
-    } else {
-        sw = Math.round(clientWidth) - EDGE_OFFSET * 2;
-        sh = Math.round(sw / aspect);
-    }
-    // canvas.width = sw;
-    // canvas.height = sh;
-    let mousex = event.clientX;
-    let mousey = event.clientY;
-    // map mouse to canvas
-    let cw = canvas.width * .77;
-    let ch = canvas.height * .77;
-    let px = map(mousex, 0, clientWidth, 0, 1);
-    let py = map(mousey, 0, clientHeight, 0, 1);
-    canvas.style.width = cw + 'px';
-    canvas.style.height = ch + 'px';
-    canvas.style.position = 'absolute';
-    canvas.style.left = mousex - cw / 2 - cw * (-.5 + px) * 1.5 + 'px';
-    canvas.style.top = mousey - ch / 2 - ch * (-.5 + py) * 1.5 + 'px';
-}
-
-
 
 function save() {
     console.log('preparing canvas for saving...');
     const dataURL = canvas.toDataURL('image/png');
     const link = document.createElement('a');
     link.download = 'buso_' + $fx.hash + '.png';
-    // link.href = imgElement.src;
     link.href = dataURL;
     link.click();
 }
+
+
+window.onload = main;
+window.addEventListener('resize', onresize, false);
+document.addEventListener('keydown', function (event) {
+    if (event.key == 's') {
+        save();
+    }
+});

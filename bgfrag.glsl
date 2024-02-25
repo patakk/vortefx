@@ -296,6 +296,6 @@ void main() {
 
     // result = mix(result, u_edgecolor, .4*smoothstep(.1, .2, edges));
 
-    gl_FragColor = vec4(vec3(result.rgb), 1.);
+    gl_FragColor = vec4(vec3(color.rgb), 1.);
     
 }
