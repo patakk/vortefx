@@ -72,6 +72,9 @@ void main() {
     float stroke_nz = fbm3(vec3(v_uv.x, v_uv.y*14., color.x))*.5+.5;
     stroke_nz = clamp(stroke_nz, 0., 1.);
     stroke_nz = smoothstep(.3, .8, stroke_nz);
+    
+    float stroke_nz2 = fbm3(vec3(noisy_uv.x, noisy_uv.y*.08*v_addinfo.x, color.x+13.13))*.5+.5;
+    stroke_nz2 = clamp(stroke_nz2, 0., 1.);
 
     float drag1 = clamp(remap(v_uv.y, .0, 66./v_addinfo.x, 0., 1.), 0., 1.);
     float drag2 = 1. - clamp(remap(v_uv.y, 1.-66./v_addinfo.x, 1., 0., 1.), 0., 1.);
@@ -83,7 +86,7 @@ void main() {
     float oo = 1.;
     float edge = smoothstep(0.04,0.05,v_uv.y);
     float ffa = .5+.5*sin(drag_uv.x*(1. + 3.*color.x));
-    float ssx = smoothstep(-1., -.3, sin(drag_uv.x*333.*u_stripefrq));
+    float ssx = smoothstep(-1., -.3, sin(drag_uv.x*333.*u_stripefrq + 0.*sin(v_uv.y*v_addinfo.x/3.)));
     float ssxc = smoothstep(.1, .3, sin(drag_uv.x*343.));
     float ssy = smoothstep(-.1, .5, cos(v_uv.y*floor(v_addinfo.x*.08*u_stripefrq)*3.14));
     float ssdiagnoal = smoothstep(-.1, .5, sin(drag_uv.x*343. + v_uv.y*v_addinfo.x*.23));
@@ -103,10 +106,13 @@ void main() {
         result = vec4(color, stroke_nz*round);
     }
     else if(u_version < 2.01){
+        vec3 cc = mix(color, globalc, smoothstep(.0, .8, 1.-stroke_nz2));
         result = vec4(color*round+(1.-round)*globalc, stroke_nz);
     }
     else if(u_version < 3.01){
-        result = vec4(vec3(color)*ffa+(1.-ffa)*color, stroke_nz*sqrt(ffa));
+        vec3 c1 = vec3(color)*ffa+(1.-ffa)*color;
+        vec3 cc = mix(c1, globalc, smoothstep(.0, .8, 1.-stroke_nz2));
+        result = vec4(cc, stroke_nz*sqrt(ffa));
     }
     else if(u_version < 4.01){
         vec3 c1 = vec3(color)*ssx+(1.-ssx)*globalc;

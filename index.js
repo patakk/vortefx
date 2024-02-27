@@ -24,6 +24,7 @@ let VERSION;
 let MINTHICKNESS = -1;
 let MAXTHICKNESS = -1;
 let DOM = false;
+let CURVECOUNTSCALE = 1;
 
 const DIM = 2000;
 let REN = window.innerHeight * 2;
@@ -36,13 +37,13 @@ const featureName = "class";
 function getVersionFeatureString(version) {
     switch (version) {
         case 0: return "kangu";
-        case 1: return "zare";
+        case 1: return "bu";
         case 2: return "boma";
         case 3: return "besa";
         case 4: return "zuno";
         case 5: return "kena";
         case 6: return "kuno";
-        case 7: return "bu";
+        case 7: return "zare";
         case 8: return "teka";
         case 9: return "so";
     }
@@ -80,15 +81,23 @@ function main() {
     MINTHICKNESS = 11;
     MAXTHICKNESS = 266;
 
+    CURVECOUNTSCALE = 1;
+    if(rand(0, 1) < .05){
+        CURVECOUNTSCALE = 0.1;
+    }
     if(VERSION == 9)
         MINTHICKNESS = 222;
 
-    if(rand(0,1) < .05){
-        MINTHICKNESS = rand(140, 281);
+    if(rand(0,1) < .1){
+        MINTHICKNESS = rand(77, 199);
         MAXTHICKNESS = MINTHICKNESS;
+        CURVECOUNTSCALE = 1;
     }
 
-    
+    if(VERSION == 1){
+        MINTHICKNESS = rand(77, 199);
+        MAXTHICKNESS = MINTHICKNESS;
+    }
 
     combinedFeatures[featureName] = getVersionFeatureString(VERSION);
     DOM = false;
@@ -155,16 +164,14 @@ function main() {
 }
 
 function setupCurves() {
-    let curveCount = rand(5, 33);
-    if (rand(0, 1) < .95)
-        curveCount = rand(38, 39);
+    let curveCount = rand(38, 39)*CURVECOUNTSCALE;
     for (let k = 0; k < curveCount; k++) {
         setupCurve(k / curveCount);
     }
 }
 
 function setupCurves2() {
-    let curveCount = rand(30, 50);
+    let curveCount = rand(30, 50)*CURVECOUNTSCALE;
     for(let k = 0; k < curveCount; k++){
         let thickness = k / curveCount;
         let curve = [];
@@ -209,7 +216,7 @@ function setupCurves2() {
 }
 
 function setupCurves3() {
-    let curveCount = 30;
+    let curveCount = 30*CURVECOUNTSCALE;
     for(let k = 0; k < curveCount; k++){
         let thickness = k / curveCount;
         let curve = [];
