@@ -3,10 +3,13 @@ precision mediump float;
 uniform vec2 u_resolution;
 uniform vec3 u_globalcolor;
 uniform float u_version;
+uniform float u_stripefrq;
+uniform float u_uvdrag;
 uniform sampler2D u_randomTexture;
 
 varying vec2 v_uv;
 varying vec3 v_diffuse;
+varying vec3 v_addinfo;
 
 #define NUM_OCTAVES 3
 
@@ -52,6 +55,10 @@ float fbm3(vec3 vecin) {
     return v;
 }
 
+float remap(float x, float a, float b, float c, float d) {
+    return c + (x - a) * (d - c) / (b - a);
+}
+
 
 void main() {
     vec3 color = v_diffuse;
@@ -66,38 +73,66 @@ void main() {
     stroke_nz = clamp(stroke_nz, 0., 1.);
     stroke_nz = smoothstep(.3, .8, stroke_nz);
 
+    float drag1 = clamp(remap(v_uv.y, .0, 66./v_addinfo.x, 0., 1.), 0., 1.);
+    float drag2 = 1. - clamp(remap(v_uv.y, 1.-66./v_addinfo.x, 1., 0., 1.), 0., 1.);
+    float drag = drag1*drag2;
+    drag = 1.-pow(1.-drag, 4.);
+    vec2 drag_uv = v_uv;
+    drag_uv.x += drag*0.0471*sin(v_uv.x*10.)*u_uvdrag;
+
     float oo = 1.;
     float edge = smoothstep(0.04,0.05,v_uv.y);
-    float ffa = .5+.5*sin(v_uv.x*(1. + 3.*color.x));
-    float ssa = smoothstep(-1., -.3, sin(v_uv.x*333.));
-    float ssb = smoothstep(.1, .3, sin(v_uv.x*343.));
+    float ffa = .5+.5*sin(drag_uv.x*(1. + 3.*color.x));
+    float ssx = smoothstep(-1., -.3, sin(drag_uv.x*333.*u_stripefrq));
+    float ssxc = smoothstep(.1, .3, sin(drag_uv.x*343.));
+    float ssy = smoothstep(-.1, .5, cos(v_uv.y*floor(v_addinfo.x*.08*u_stripefrq)*3.14));
+    float ssdiagnoal = smoothstep(-.1, .5, sin(drag_uv.x*343. + v_uv.y*v_addinfo.x*.23));
+    
+    float sxu = 3./v_addinfo.x;
+    float smoothedge1 = smoothstep(.0,sxu,v_uv.y);
+    float smoothedge2 = 1. - smoothstep(1.-sxu, 1., v_uv.y);
+    float smoothedge = smoothedge1*smoothedge2;
 
     vec4 result;
+    vec3 globalc = u_globalcolor;
 
     if(u_version < 0.01){
-        result = vec4(vec3(color)*edge+vec3(u_globalcolor*.96)*(1.-edge), stroke_nz);
+        result = vec4(vec3(color)*edge+vec3(globalc*.96)*(1.-edge), stroke_nz);
     }
     else if(u_version < 1.01){
         result = vec4(color, stroke_nz*round);
     }
     else if(u_version < 2.01){
-        result = vec4(color*round+(1.-round)*u_globalcolor, stroke_nz);
+        result = vec4(color*round+(1.-round)*globalc, stroke_nz);
     }
     else if(u_version < 3.01){
         result = vec4(vec3(color)*ffa+(1.-ffa)*color, stroke_nz*sqrt(ffa));
     }
     else if(u_version < 4.01){
-        vec3 c1 = vec3(color)*ssa+(1.-ssa)*u_globalcolor;
-        result = vec4(c1, stroke_nz*ssb);
+        vec3 c1 = vec3(color)*ssx+(1.-ssx)*globalc;
+        result = vec4(c1, stroke_nz*ssxc);
     }
     else if(u_version < 5.01){
-        vec3 c1 = vec3(color)*ssa+(1.-ssa)*u_globalcolor;
+        vec3 c1 = vec3(color)*ssx+(1.-ssx)*globalc;
         result = vec4(vec3(c1), stroke_nz);
     }
     else if(u_version < 6.01){
-        ssa = smoothstep(-1.+1.4*0., -.3+1.4*0., sin(noisy_uv.x*333.));
-        vec3 c1 = mix(vec3(color), vec3(u_globalcolor), smoothstep(.0, .999, 1.-v_uv.y))*ssa+(1.-ssa)*mix(u_globalcolor, u_globalcolor*.7, smoothstep(.0, .999, v_uv.y));
+        ssx = smoothstep(-1.+1.4*0., -.3+1.4*0., sin(noisy_uv.x*333.));
+        vec3 c1 = mix(vec3(color), vec3(globalc), smoothstep(.0, .999, 1.-v_uv.y))*ssx+(1.-ssx)*mix(globalc, globalc*.7, smoothstep(.0, .999, v_uv.y));
         result = vec4(vec3(c1), stroke_nz);
     }
+    else if(u_version < 7.01){
+        result = vec4(mix(vec3(color), vec3(globalc), ssy), stroke_nz);
+    }
+    else if(u_version < 8.01){
+        result = vec4(vec3(color), ssy*ssx);
+        result = vec4(mix(color, globalc, ssy*ssx), stroke_nz);
+    }
+    else if(u_version < 9.01){
+        result = vec4(vec3(color), ssy*ssx);
+        result = vec4(color, ssy*ssx*stroke_nz);
+    }
+    result.a *= smoothedge;
+
     gl_FragColor = result;
 }

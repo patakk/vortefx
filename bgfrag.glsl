@@ -37,6 +37,7 @@ void main() {
     result = result + .05*(-.5 + salt);
     result = clamp(result, 0., 1.);
 
+    gl_FragColor = vec4(vec3(color), 1.);
     gl_FragColor = vec4(vec3(result), 1.);
     
 }
