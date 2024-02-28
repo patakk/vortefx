@@ -1,6 +1,9 @@
 precision mediump float;
 
 uniform vec2 u_resolution;
+uniform vec2 u_simulation;
+uniform float u_zoom;
+uniform vec2 u_shiftxy;
 uniform vec3 u_globalcolor;
 uniform float u_version;
 uniform float u_stripefrq;
@@ -46,7 +49,7 @@ float fbm3(vec3 vecin) {
     float a = 0.5;
     vec2 shift = vec2(100.0);
     mat2 rot = mat2(cos(0.5), sin(0.5),
-                    -sin(0.5), cos(0.50));
+                    -sin(0.5), cos(0.5));
     for (int i = 0; i < NUM_OCTAVES; ++i) {
         v += a * noise3(_st, t);
         _st = rot * _st * 2.0 + shift;
@@ -85,7 +88,7 @@ void main() {
 
     float oo = 1.;
     float edge = smoothstep(0.04,0.05,v_uv.y);
-    float ffa = .5+.5*sin(drag_uv.x*(1. + 3.*color.x));
+    float ffa = .9+.1*sin(drag_uv.x*(1. + 3.*color.x));
     float ssx = smoothstep(-1., -.3, sin(drag_uv.x*333.*u_stripefrq + 0.*sin(v_uv.y*v_addinfo.x/3.)));
     float ssxc = smoothstep(.1, .3, sin(drag_uv.x*343.));
     float ssy = smoothstep(-.1, .5, cos(v_uv.y*floor(v_addinfo.x*.08*u_stripefrq)*3.14));
@@ -124,17 +127,56 @@ void main() {
     }
     else if(u_version < 6.01){
         ssx = smoothstep(-1.+1.4*0., -.3+1.4*0., sin(noisy_uv.x*333.));
-        vec3 c1 = mix(vec3(color), vec3(globalc), smoothstep(.0, .999, 1.-v_uv.y))*ssx+(1.-ssx)*mix(globalc, globalc*.7, smoothstep(.0, .999, v_uv.y));
+        vec3 c1 = mix(vec3(color), vec3(globalc), smoothstep(.55, .99, abs(v_uv.y-.5)*2.))*ssx+(1.-ssx)*mix(globalc, globalc*.7, smoothstep(.0, .999, v_uv.y));
         result = vec4(vec3(c1), stroke_nz);
     }
     else if(u_version < 7.01){
         result = vec4(mix(vec3(color), vec3(globalc), ssy), stroke_nz);
     }
     else if(u_version < 8.01){
-        result = vec4(vec3(color), ssy*ssx);
+        ssx = smoothstep(-1., -.3, sin((1.+3.*hash12(vec2(v_addinfo.y)))*drag_uv.x*222. + 0.*sin(v_uv.y*v_addinfo.x/3.)));
+        ssxc = smoothstep(.1, .3, sin(drag_uv.x*343.));
+        ssy = smoothstep(-.1, .5, cos((1.+3.*hash12(vec2(v_addinfo.y)))*v_uv.y*floor(v_addinfo.x*.08)*3.14));
+        ssdiagnoal = smoothstep(-.1, .5, sin(drag_uv.x*343. + v_uv.y*v_addinfo.x*.23));
         result = vec4(mix(color, globalc, ssy*ssx), stroke_nz);
     }
     else if(u_version < 9.01){
+        vec2 guv = gl_FragCoord.xy/u_simulation.xy;
+        float ang = v_addinfo.y*100.134;
+        mat2 rot = mat2(cos(ang), sin(ang), -sin(ang), cos(ang));
+        guv = guv - .5 + color.xy;
+        guv = rot*guv/u_zoom;
+        guv += vec2(drag*.01, 0.);
+        guv = guv + .5;
+        float stfra = 20. + 140.*hash12(vec2(v_addinfo.y));
+        float sinx = smoothstep(.4, .4+.06, sin(guv.x*133.*u_stripefrq));
+        float siny = smoothstep(.4, .4+.06, sin(guv.y*133.*u_stripefrq));
+        float idx = mod(floor(guv.x*stfra*(1.1+.1*u_stripefrq)), 3.);
+        float idy = mod(floor(guv.y*stfra*(1.1+.1*u_stripefrq)), 3.);
+        idx = 1.-min(idx, 1.);
+        idy = 1.-min(idy, 1.);
+        guv = mod(guv*stfra*(1.1 +.1*u_stripefrq), 1.);
+        // guv += vec2(
+        //     -.22+.22*2.*fbm3(vec3((guv.x-.5)*2.*(.1+.5*u_stripefrq), (guv.y-.5)*2.*(.1+.5*u_stripefrq), 1.)),
+        //     -.22+.22*2.*fbm3(vec3((guv.x-.5)*2.*(.1+.5*u_stripefrq), (guv.y-.5)*2.*(.1+.5*u_stripefrq), 2.))
+        // );
+        float circle = smoothstep(.5, .4, length(guv-.5));
+        float square = smoothstep(.2, .3, min(abs(guv.x-.5), abs(guv.y-.5)));
+        result = vec4(vec3(square*idx*idy), stroke_nz);
+        result = vec4(mix(color, globalc, square), stroke_nz);
+    }
+    else if(u_version < 10.01){
+        result = vec4(vec3(color), ssy*ssx);
+        result = vec4(color, ssdiagnoal*stroke_nz);
+    }
+    else if(u_version < 11.01){
+        vec2 guv = v_uv;
+        guv.x = mod(guv.x/v_addinfo.x*1400., 1.);
+        float circle = smoothstep(.5, .48, length(guv-.5));
+        result = vec4(vec3(circle), stroke_nz);
+        result = vec4(mix(color, globalc, 1.-circle), circle*stroke_nz);
+    }
+    else if(u_version < 12.01){
         result = vec4(vec3(color), ssy*ssx);
         result = vec4(color, ssy*ssx*stroke_nz);
     }

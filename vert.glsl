@@ -1,3 +1,5 @@
+precision mediump float;
+
 uniform vec2 u_simulation;
 uniform float u_zoom;
 uniform vec2 u_shiftxy;

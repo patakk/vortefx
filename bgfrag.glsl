@@ -31,7 +31,7 @@ void main() {
     float salty = rand(v_uv + 0.3 + u_seed.x);
     float salt = rand(v_uv + 0.3 + u_seed.x + saltx*2.314 + salty*2.314);
     vec3 color = texture2D(u_texture, v_uv).rgb;
-    float edges = edgedetection(u_texture, v_uv, u_resolution, 3.0)*0.75;
+    float edges = edgedetection(u_texture, v_uv+0.*vec2(.009*saltx, .0), u_resolution, 3.0)*0.75;
     vec3 result = color;
     result = mix(result, u_edgecolor, edges);
     result = result + .05*(-.5 + salt);

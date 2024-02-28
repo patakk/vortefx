@@ -24,7 +24,9 @@ let VERSION;
 let MINTHICKNESS = -1;
 let MAXTHICKNESS = -1;
 let DOM = false;
+let BUSO = false;
 let CURVECOUNTSCALE = 1;
+let CURVESCALESPOW = 1;
 
 const DIM = 2000;
 let REN = window.innerHeight * 2;
@@ -46,6 +48,8 @@ function getVersionFeatureString(version) {
         case 7: return "zare";
         case 8: return "teka";
         case 9: return "so";
+        case 10: return "mai";
+        case 11: return "ata";
     }
 }
 
@@ -76,17 +80,24 @@ function main() {
     shuffle(PALETTES[0]);
 
     curves = [], curveslengths = [], quads = [], uvs = [], diffuse = [], addinfo = [];
-    VERSION = Math.floor((1. - Math.pow(rand(0, 1), 1.2)) * 9);
+    //VERSION = Math.floor((1. - Math.pow(rand(0, 1), 1.)) * 10);
+    // VERSION = 6;
+    // VERSION = ($fx.iteration-1+11)%11;
+    // VERSION = Math.max(0, VERSION);
+
+    VERSION = Math.floor(rand(0, 11));
 
     MINTHICKNESS = 11;
-    MAXTHICKNESS = 266;
+    MAXTHICKNESS = 366;
+
+    CURVESCALESPOW = 2.5;
+    if(rand(0,1) < .5){
+        CURVESCALESPOW = 2.5;
+    }
 
     CURVECOUNTSCALE = 1;
-    if(rand(0, 1) < .05){
-        CURVECOUNTSCALE = 0.1;
-    }
-    if(VERSION == 9)
-        MINTHICKNESS = 222;
+    // if(VERSION == 9)
+    //     MINTHICKNESS = 222;
 
     if(rand(0,1) < .1){
         MINTHICKNESS = rand(77, 199);
@@ -94,7 +105,7 @@ function main() {
         CURVECOUNTSCALE = 1;
     }
 
-    if(VERSION == 1){
+    if(VERSION == 1 && rand(0,1)<.5){
         MINTHICKNESS = rand(77, 199);
         MAXTHICKNESS = MINTHICKNESS;
     }
@@ -106,12 +117,20 @@ function main() {
         combinedFeatures[featureName] = combinedFeatures[featureName] + " dom";
     }
 
+    BUSO = false;
+    if(rand(0,1) < .05){
+        BUSO = true;
+        combinedFeatures[featureName] = combinedFeatures[featureName] + " buso";
+        CURVECOUNTSCALE = .1;
+        CURVESCALESPOW = 12.5;
+    }
+
     EDGE_OFFSET = window.innerHeight * .035;
     if ($fx.isPreview) EDGE_OFFSET = 0;
 
     onresize(null);
 
-    let setupchoice = Math.floor(rand(0, 3))*0;
+    let setupchoice = Math.floor(rand(0, 3));
     if (setupchoice == 0) {
         setupCurves();
     }
@@ -124,9 +143,8 @@ function main() {
 
     let numtwirls = 13;
     let subdivcutoff = rand(0, 1) < .5 ? .5 : rand(.9, .99);
-    subdivcutoff = 1.;
     for (let k = 0; k < numtwirls; k++) {
-         twirl(k > numtwirls * subdivcutoff);
+         twirl(false);
     }
 
     curves.forEach(curve => {
@@ -159,7 +177,7 @@ function main() {
     finishupQuadInfo();
     render();
     
-    $fx.features(combinedFeatures);
+    // $fx.features(combinedFeatures);
     $fx.preview();
 }
 
@@ -210,7 +228,7 @@ function setupCurves2() {
         }
 
         curve = subdivided;
-        curve.thickness = MINTHICKNESS + (MAXTHICKNESS-MINTHICKNESS) * Math.pow(1 - thickness, 2.5);
+        curve.thickness = MINTHICKNESS + (MAXTHICKNESS-MINTHICKNESS) * Math.pow(1 - thickness, CURVESCALESPOW);
         curves.push(curve);
     }
 }
@@ -243,7 +261,7 @@ function setupCurves3() {
         }
 
         curve = subdivided;
-        curve.thickness = MINTHICKNESS + (MAXTHICKNESS-MINTHICKNESS) * Math.pow(1 - thickness, 2.5);
+        curve.thickness = MINTHICKNESS + (MAXTHICKNESS-MINTHICKNESS) * Math.pow(1 - thickness, CURVESCALESPOW);
         curves.push(curve);
     }
     for(let k = 0; k < curveCount; k++){
@@ -272,7 +290,7 @@ function setupCurves3() {
         }
 
         curve = subdivided;
-        curve.thickness = MINTHICKNESS + (MAXTHICKNESS-MINTHICKNESS) * Math.pow(1 - thickness, 2.5);
+        curve.thickness = MINTHICKNESS + (MAXTHICKNESS-MINTHICKNESS) * Math.pow(1 - thickness, CURVESCALESPOW);
         curves.push(curve);
     }
 }
@@ -307,7 +325,6 @@ function render() {
     let _c = PALETTES[3][Math.floor(rand(0, PALETTES[3].length))];
     if(rand(0,1) < .02){
         if(rand(0,1) < .5) _c = [1,0,0];
-        else _c = [.04,0.1,.3];
     }
 
     let shx = 0.;
@@ -332,8 +349,8 @@ function render() {
         zoom = parseFloat(search.get("scale"));
     }
 
-    gl.uniform2f(resolutionUniformLocation, REN, Math.round(REN / ASPECT));
     gl.uniform2f(simulationUniformLocation, DIM, Math.round(DIM / ASPECT));
+    gl.uniform2f(resolutionUniformLocation, REN, Math.round(REN / ASPECT));
     gl.uniform3f(globalcolorUniformLocation, _c[0], _c[1], _c[2]);
     gl.uniform1f(versionUniformLocation, VERSION);
     gl.uniform1f(stripefreqUniformLocation, stripefrq);
@@ -479,7 +496,11 @@ function twirl(subdivide = false) {
     if(DOM){
         strength = rand(0.6, 0.7)*3;
         twirlFrequency = 13.0;
-}
+    }
+    if(BUSO){
+        strength = rand(0.6, 0.7)*1;
+        twirlFrequency = 13.0;
+    }
 
     curves.forEach((curve, i) => {
         curve.forEach((point, j) => {
@@ -515,7 +536,7 @@ function twirl(subdivide = false) {
                 }
             }
             newCurve.thickness = curve.thickness;
-            curve = newCurve;
+            curves[i] = newCurve;
         }
     });
 }
@@ -580,9 +601,11 @@ function constructQuads() {
     }
 
     if(ismono){
-        combinedFeatures[featureName] = combinedFeatures[featureName] + " suli";
+        // combinedFeatures[featureName] = combinedFeatures[featureName] + " suli";
     }
 
+    let accentcolor = PALETTES[3][Math.floor(rand(0, PALETTES[3].length))];
+    let gradientToAccent = rand(0, 1) < 1.25;
     for (let i = 0; i < curves.length; i++) {
         let points = curves[i];
         curveslengths.push(0)
@@ -599,6 +622,13 @@ function constructQuads() {
             else {
                 c1 = [1, 1, 1]
             }
+        }
+
+        if(gradientToAccent){
+            let cfac = Math.pow(i/curves.length, 3);
+            c1[0] = cfac*accentcolor[0] + c1[0]*(1-cfac);
+            c1[1] = cfac*accentcolor[1] + c1[1]*(1-cfac);
+            c1[2] = cfac*accentcolor[2] + c1[2]*(1-cfac);
         }
         if(false){
             for (let j = 1, length = 0; j < points.length - 1; j++) {
@@ -644,11 +674,11 @@ function constructQuads() {
                 let p2 = pos.add(left.multiplyScalar(curves[i].thickness)).clone();
                 
                 let c11 = c1.slice();
-                c11[0] = c1[0]*(1.-.21*power(noise(i, j*.001, 0.0), 5));
-                c11[1] = c1[1]*(1.-.21*power(noise(i, j*.001, 0.0), 5));
-                c11[2] = c1[2]*(1.-.21*power(noise(i, j*.001, 0.0), 5));
+                c11[0] = c1[0]*(1.11-.21*power(noise(i, j*.001, 0.0), 5));
+                c11[1] = c1[1]*(1.11-.21*power(noise(i, j*.001, 20.0), 5));
+                c11[2] = c1[2]*(1.11-.21*power(noise(i, j*.001, 50.0), 5));
     
-                addstripattribs(p1, p2, [length, 0], [length, 1], c11, curves[i].thickness);
+                addstripattribs(p1, p2, [length, 0], [length, 1], c11, curves[i].thickness, i);
                 curveslengths[i] += 2;
             }
         }
@@ -656,15 +686,15 @@ function constructQuads() {
 
 }
 
-function addstripattribs(p1, p2, uv1 = [0, 0], uv2 = [1, 0], color = [1, 0, 0], thickness = 1.0) {
+function addstripattribs(p1, p2, uv1 = [0, 0], uv2 = [1, 0], color = [1, 0, 0], thickness = 1.0, curveindex = 0) {
     quads.push(p1.x); quads.push(p1.y); quads.push(p1.z);
     quads.push(p2.x); quads.push(p2.y); quads.push(p2.z);
     uvs.push(uv1[0]); uvs.push(uv1[1]);
     uvs.push(uv2[0]); uvs.push(uv2[1]);
     diffuse.push(color[0]); diffuse.push(color[1]); diffuse.push(color[2]);
     diffuse.push(color[0]); diffuse.push(color[1]); diffuse.push(color[2]);
-    addinfo.push(thickness); addinfo.push(0.); addinfo.push(0.);
-    addinfo.push(thickness); addinfo.push(0.); addinfo.push(0.);
+    addinfo.push(thickness); addinfo.push(curveindex); addinfo.push(0.);
+    addinfo.push(thickness); addinfo.push(curveindex); addinfo.push(0.);
 }
 
 
@@ -723,7 +753,7 @@ function setupCurve(thickness) {
     }
 
     curve = subdivided;
-    curve.thickness = MINTHICKNESS + (MAXTHICKNESS-MINTHICKNESS) * Math.pow(1 - thickness, 2.5);
+    curve.thickness = MINTHICKNESS + (MAXTHICKNESS-MINTHICKNESS) * Math.pow(1 - thickness, CURVESCALESPOW);
     curves.push(curve);
 }
 
