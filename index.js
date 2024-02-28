@@ -439,7 +439,7 @@ function calculateBounds(curves){
 
 function stretchCurves(curves, bounds){
     let margin = DIM * .025;
-    let hasStretch = rand(0, 1) < .5;
+    let hasStretch = rand(0, 1) < 1.5;
 
     if(MINTHICKNESS == MAXTHICKNESS)
         hasStretch = true;
@@ -449,13 +449,22 @@ function stretchCurves(curves, bounds){
     
     let stretchFactor = hasStretch ? rand(0.1, 0.2) : 0;
 
+    let stretchOption = 0;
+    if(rand(0,1) < .25){
+        stretchOption = 1;
+    }
+
     curves.forEach((curve, j) => {
         curve.forEach(point => {
             let curvemargin = curve.thickness + margin
             let ppx = map(point.x, bounds.minx, bounds.maxx, 0, 1);
             let ppy = map(point.y, bounds.miny, bounds.maxy, 0, 1);
-            let powerFactor = j < curves.length * stretchFactor ? 5 : 1;
-            //let powerFactor = 1 + hasStretch*4*Math.pow(j/curves.length, 5);
+            let powerFactor;
+            if(stretchOption == 0){
+                powerFactor = j < curves.length * stretchFactor ? 5 : 1;
+            }else{
+                powerFactor = 1 + hasStretch*4*Math.pow(j/curves.length, 5);
+            }
             point.x = map(power(ppx, powerFactor), 0, 1, curvemargin, DIM - curvemargin);
             point.y = map(power(ppy, powerFactor), 0, 1, curvemargin, DIM / ASPECT - curvemargin);
         });
