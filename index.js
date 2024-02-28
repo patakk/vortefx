@@ -614,7 +614,7 @@ function constructQuads() {
     }
 
     let accentcolor = PALETTES[3][Math.floor(rand(0, PALETTES[3].length))];
-    let gradientToAccent = rand(0, 1) < 1.25;
+    let gradientToAccent = rand(0, 1) < .25;
     for (let i = 0; i < curves.length; i++) {
         let points = curves[i];
         curveslengths.push(0)
