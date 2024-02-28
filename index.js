@@ -439,7 +439,7 @@ function calculateBounds(curves){
 
 function stretchCurves(curves, bounds){
     let margin = DIM * .025;
-    let hasStretch = rand(0, 1) < 1.5;
+    let hasStretch = rand(0, 1) < .5;
 
     if(MINTHICKNESS == MAXTHICKNESS)
         hasStretch = true;
@@ -450,7 +450,7 @@ function stretchCurves(curves, bounds){
     let stretchFactor = hasStretch ? rand(0.1, 0.2) : 0;
 
     let stretchOption = 0;
-    if(rand(0,1) < .25){
+    if(rand(0,1) < .05){
         stretchOption = 1;
     }
 
@@ -463,7 +463,7 @@ function stretchCurves(curves, bounds){
             if(stretchOption == 0){
                 powerFactor = j < curves.length * stretchFactor ? 5 : 1;
             }else{
-                powerFactor = 1 + hasStretch*4*Math.pow(j/curves.length, 5);
+                powerFactor = 1 + hasStretch*4*Math.pow(j/curves.length, 1);
             }
             point.x = map(power(ppx, powerFactor), 0, 1, curvemargin, DIM - curvemargin);
             point.y = map(power(ppy, powerFactor), 0, 1, curvemargin, DIM / ASPECT - curvemargin);
